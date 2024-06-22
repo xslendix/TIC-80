@@ -38,5 +38,9 @@ if(BUILD_WITH_SCHEME)
         target_compile_definitions(scheme PRIVATE S7_BAREMETALPI)
     endif()
 
+    if (PSP)
+        target_compile_definitions(scheme PRIVATE S7_PSP)
+    endif()
+
 
 endif()

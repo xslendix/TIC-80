@@ -2,16 +2,15 @@
 #include "api.h"
 #ifndef TIC80_FFT_UNSUPPORTED
 // #define MA_DEBUG_OUTPUT
-#define MINIAUDIO_IMPLEMENTATION
-#include "kiss_fft.h"
-#include "kiss_fftr.h"
-#include "miniaudio.h"
-#include "../fftdata.h"
-#include "fft.h"
+#    define MINIAUDIO_IMPLEMENTATION
+#    include "../fftdata.h"
+#    include "fft.h"
+#    include "kiss_fft.h"
+#    include "kiss_fftr.h"
+#    include "miniaudio.h"
 #endif
 #include <memory.h>
 #include <stdio.h>
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -24,7 +23,7 @@ float sampleBuf[FFT_SIZE * 2];
 void miniaudioLogCallback(void* userData, ma_uint32 level, const char* message)
 {
     FFT_DebugLog(FFT_LOG_TRACE, "miniaudioLogCallback got called\n");
-    
+
     (void)userData;
     switch (level)
     {

@@ -46,7 +46,7 @@ inline void tic_tool_poke4(void* addr, u32 index, u8 value)
     POKE_N(addr, index, value, 1,1,2,15);
 }
 
-inline u8 tic_tool_peek4(const void* addr, u32 index)
+__attribute__((always_inline)) inline u8 tic_tool_peek4(const void* addr, u32 index)
 {
     return PEEK_N(addr, index, 1,1,2,15);
 }

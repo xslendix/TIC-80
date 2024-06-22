@@ -20,36 +20,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "fftdata.h"
 #include "../ext/fft.h"
+#include "fftdata.h"
 
 #include "api.h"
 #include "core.h"
 #include "tilesheet.h"
 
 #include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "tic_assert.h"
 
 #ifdef _3DS
-#include <3ds.h>
+#    include <3ds.h>
 #endif
 
 #include "blip_buf.h"
 
-static_assert(TIC_BANK_BITS == 3,                   "tic_bank_bits");
-static_assert(sizeof(tic_map) < 1024 * 32,          "tic_map");
-static_assert(sizeof(tic_rgb) == 3,                 "tic_rgb");
-static_assert(sizeof(tic_palette) == 48,            "tic_palette");
-static_assert(sizeof(((tic_vram *)0)->vars) == 4,   "tic_vram vars");
-static_assert(sizeof(tic_vram) == TIC_VRAM_SIZE,    "tic_vram");
-static_assert(sizeof(tic_ram) == TIC_RAM_SIZE,      "tic_ram");
+static_assert(TIC_BANK_BITS == 3, "tic_bank_bits");
+static_assert(sizeof(tic_map) < 1024 * 32, "tic_map");
+static_assert(sizeof(tic_rgb) == 3, "tic_rgb");
+static_assert(sizeof(tic_palette) == 48, "tic_palette");
+static_assert(sizeof(((tic_vram*)0)->vars) == 4, "tic_vram vars");
+static_assert(sizeof(tic_vram) == TIC_VRAM_SIZE, "tic_vram");
+static_assert(sizeof(tic_ram) == TIC_RAM_SIZE, "tic_ram");
 
 u8 tic_api_peek(tic_mem* memory, s32 address, s32 bits)
 {
@@ -57,14 +57,21 @@ u8 tic_api_peek(tic_mem* memory, s32 address, s32 bits)
         return 0;
 
     const u8* ram = (u8*)memory->ram;
-    enum{RamBits = sizeof(tic_ram) * BITS_IN_BYTE};
-
-    switch(bits)
+    enum
     {
-    case 1: if(address < RamBits / 1) return tic_tool_peek1(ram, address);
-    case 2: if(address < RamBits / 2) return tic_tool_peek2(ram, address);
-    case 4: if(address < RamBits / 4) return tic_tool_peek4(ram, address);
-    case 8: if(address < RamBits / 8) return ram[address];
+        RamBits = sizeof(tic_ram) * BITS_IN_BYTE
+    };
+
+    switch (bits)
+    {
+        case 1:
+            if (address < RamBits / 1) return tic_tool_peek1(ram, address);
+        case 2:
+            if (address < RamBits / 2) return tic_tool_peek2(ram, address);
+        case 4:
+            if (address < RamBits / 4) return tic_tool_peek4(ram, address);
+        case 8:
+            if (address < RamBits / 8) return ram[address];
     }
 
     return 0;
@@ -77,14 +84,25 @@ void tic_api_poke(tic_mem* memory, s32 address, u8 value, s32 bits)
 
     tic_core* core = (tic_core*)memory;
     u8* ram = (u8*)memory->ram;
-    enum{RamBits = sizeof(tic_ram) * BITS_IN_BYTE};
-    
-    switch(bits)
+    enum
     {
-    case 1: if(address < RamBits / 1) tic_tool_poke1(ram, address, value); break;
-    case 2: if(address < RamBits / 2) tic_tool_poke2(ram, address, value); break;
-    case 4: if(address < RamBits / 4) tic_tool_poke4(ram, address, value); break;
-    case 8: if(address < RamBits / 8) ram[address] = value; break;
+        RamBits = sizeof(tic_ram) * BITS_IN_BYTE
+    };
+
+    switch (bits)
+    {
+        case 1:
+            if (address < RamBits / 1) tic_tool_poke1(ram, address, value);
+            break;
+        case 2:
+            if (address < RamBits / 2) tic_tool_poke2(ram, address, value);
+            break;
+        case 4:
+            if (address < RamBits / 4) tic_tool_poke4(ram, address, value);
+            break;
+        case 8:
+            if (address < RamBits / 8) ram[address] = value;
+            break;
     }
 }
 
@@ -123,12 +141,7 @@ void tic_api_memcpy(tic_mem* memory, s32 dst, s32 src, s32 size)
     tic_core* core = (tic_core*)memory;
     s32 bound = sizeof(tic_ram) - size;
 
-    if (size >= 0
-        && size <= sizeof(tic_ram)
-        && dst >= 0
-        && src >= 0
-        && dst <= bound
-        && src <= bound)
+    if (size >= 0 && size <= sizeof(tic_ram) && dst >= 0 && src >= 0 && dst <= bound && src <= bound)
     {
         u8* base = (u8*)memory->ram;
         memmove(base + dst, base + src, size);
@@ -140,10 +153,7 @@ void tic_api_memset(tic_mem* memory, s32 dst, u8 val, s32 size)
     tic_core* core = (tic_core*)memory;
     s32 bound = sizeof(tic_ram) - size;
 
-    if (size >= 0
-        && size <= sizeof(tic_ram)
-        && dst >= 0
-        && dst <= bound)
+    if (size >= 0 && size <= sizeof(tic_ram) && dst >= 0 && dst <= bound)
     {
         u8* base = (u8*)memory->ram;
         memset(base + dst, val, size);
@@ -174,7 +184,7 @@ void tic_api_exit(tic_mem* tic)
 
 static inline void sync(void* dst, void* src, s32 size, bool rev)
 {
-    if(rev)
+    if (rev)
         SWAP(dst, src, void*);
 
     memcpy(dst, src, size);
@@ -194,14 +204,24 @@ void tic_api_sync(tic_mem* tic, u32 mask, s32 bank, bool toCart)
 {
     tic_core* core = (tic_core*)tic;
 
-    static const struct { s32 bank; s32 ram; s32 size; u8 mask; } Sections[] = 
-    { 
-#define TIC_SYNC_DEF(CART, RAM, ...) { offsetof(tic_bank, CART), offsetof(tic_ram, RAM), sizeof(tic_##CART), tic_sync_##CART },
-        TIC_SYNC_LIST(TIC_SYNC_DEF) 
-#undef  TIC_SYNC_DEF
-    };
+    static const struct
+    {
+        s32 bank;
+        s32 ram;
+        s32 size;
+        u8 mask;
+    } Sections[] =
+        {
+#define TIC_SYNC_DEF(CART, RAM, ...) {offsetof(tic_bank, CART), offsetof(tic_ram, RAM), sizeof(tic_##CART), tic_sync_##CART},
+            TIC_SYNC_LIST(TIC_SYNC_DEF)
+#undef TIC_SYNC_DEF
+        };
 
-    enum { Count = COUNT_OF(Sections), Mask = (1 << Count) - 1 };
+    enum
+    {
+        Count = COUNT_OF(Sections),
+        Mask = (1 << Count) - 1
+    };
 
     if (mask == 0) mask = Mask;
 
@@ -212,24 +232,24 @@ void tic_api_sync(tic_mem* tic, u32 mask, s32 bank, bool toCart)
     for (s32 i = 0; i < Count; i++)
     {
         u32 sectionMask = Sections[i].mask;
-        if(mask & sectionMask)
+        if (mask & sectionMask)
         {
             tic_bank* bankPtr = &tic->cart.banks[bank];
             s32 size = Sections[i].size;
 
-            if(sectionMask == tic_sync_palette)
+            if (sectionMask == tic_sync_palette)
             {
                 // palette syncing is a special case where we copy both vbank0 and vbank1 palettes
                 sync(vbank0(core)->palette.data, bankPtr->palette.vbank0.data, size, toCart);
 
-                if(!EMPTY(bankPtr->palette.vbank1.data))
+                if (!EMPTY(bankPtr->palette.vbank1.data))
                     sync(vbank1(core)->palette.data, bankPtr->palette.vbank1.data, size, toCart);
             }
             else
             {
                 sync(tic->ram->data + Sections[i].ram, (u8*)bankPtr + Sections[i].bank, size, toCart);
             }
-        }        
+        }
     }
 
     core->state.synced |= mask;
@@ -264,15 +284,15 @@ static void soundClear(tic_mem* memory)
     for (s32 i = 0; i < TIC_SOUND_CHANNELS; i++)
     {
         static const tic_channel_data EmptyChannel =
-        {
-            .tick = -1,
-            .pos = NULL,
-            .index = -1,
-            .note = 0,
-            .volume = {0, 0},
-            .speed = 0,
-            .duration = -1,
-        };
+            {
+                .tick = -1,
+                .pos = NULL,
+                .index = -1,
+                .note = 0,
+                .volume = {0, 0},
+                .speed = 0,
+                .duration = -1,
+            };
 
         memcpy(&core->state.music.channels[i], &EmptyChannel, sizeof EmptyChannel);
         memcpy(&core->state.sfx.channels[i], &EmptyChannel, sizeof EmptyChannel);
@@ -292,7 +312,7 @@ static void resetVbank(tic_mem* memory)
 {
     ZEROMEM(memory->ram->vram.vars);
 
-    static const u8 DefaultMapping[] = { 0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe };
+    static const u8 DefaultMapping[] = {0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe};
     memcpy(memory->ram->vram.mapping, DefaultMapping, sizeof DefaultMapping);
     memory->ram->vram.palette = memory->cart.bank0.palette.vbank0;
     memory->ram->vram.blit.segment = TIC_DEFAULT_BLIT_MODE;
@@ -300,35 +320,29 @@ static void resetVbank(tic_mem* memory)
 
 static void font2ram(tic_mem* memory)
 {
-  memory->ram->font = (tic_font) {
-        .regular =     
-        {
-            .data = 
+    memory->ram->font = (tic_font){
+        .regular =
             {
-                #include "font.inl"
-            },
-	    {
-	      {
-		.width = TIC_FONT_WIDTH, 
-		.height = TIC_FONT_HEIGHT,
-	      }
-	    } 
-        },
+                .data =
+                    {
+#include "font.inl"
+                    },
+                {{
+                    .width = TIC_FONT_WIDTH,
+                    .height = TIC_FONT_HEIGHT,
+                }}},
 
-        .alt = 
-        {
-            .data = 
+        .alt =
             {
-                #include "altfont.inl"
-            },
-	    {
-	      {
-		.width = TIC_ALTFONT_WIDTH, 
-		.height = TIC_FONT_HEIGHT, 
-	      }
-	    }
-        },
-  };
+                .data =
+                    {
+#include "altfont.inl"
+                    },
+                {{
+                    .width = TIC_ALTFONT_WIDTH,
+                    .height = TIC_FONT_HEIGHT,
+                }}},
+    };
 }
 
 void tic_api_reset(tic_mem* memory)
@@ -371,12 +385,12 @@ static void cart2ram(tic_mem* memory)
 
     enum
     {
-#define     TIC_SYNC_DEF(NAME, _, INDEX) sync_##NAME = INDEX,
-            TIC_SYNC_LIST(TIC_SYNC_DEF)
-#undef      TIC_SYNC_DEF
+#define TIC_SYNC_DEF(NAME, _, INDEX) sync_##NAME = INDEX,
+        TIC_SYNC_LIST(TIC_SYNC_DEF)
+#undef TIC_SYNC_DEF
             count,
-            all = (1 << count) - 1,
-            noscreen = BITCLEAR(all, sync_screen)
+        all = (1 << count) - 1,
+        noscreen = BITCLEAR(all, sync_screen)
     };
 
     // don't sync empty screen
@@ -386,13 +400,14 @@ static void cart2ram(tic_mem* memory)
 static void tic_close_current_vm(tic_core* core)
 {
     // close previous VM if any
-    if(core->currentVM)
+    if (core->currentVM)
     {
         // printf("Closing VM of %s, %d\n", core->currentScript->name, core->currentVM);
-        core->currentScript->close( (tic_mem*)core );
+        core->currentScript->close((tic_mem*)core);
         core->currentVM = NULL;
     }
-    if (core->memory.ram == NULL) {
+    if (core->memory.ram == NULL)
+    {
         core->memory.ram = core->memory.base_ram;
     }
 }
@@ -404,7 +419,7 @@ static bool tic_init_vm(tic_core* core, const char* code, const tic_script* conf
     core->currentScript = config;
 
     bool done = config->init((tic_mem*)core, code);
-    if(!done)
+    if (!done)
     {
         // if it couldn't init, make sure the VM is not left dirty by the implementation
         core->currentVM = NULL;
@@ -419,15 +434,15 @@ s32 tic_api_vbank(tic_mem* tic, s32 bank)
 
     s32 prev = core->state.vbank.id;
 
-    switch(bank)
+    switch (bank)
     {
-    case 0:
-    case 1:
-        if(core->state.vbank.id != bank)
-        {
-            SWAP(tic->ram->vram, core->state.vbank.mem, tic_vram);
-            core->state.vbank.id = bank;
-        }
+        case 0:
+        case 1:
+            if (core->state.vbank.id != bank)
+            {
+                SWAP(tic->ram->vram, core->state.vbank.mem, tic_vram);
+                core->state.vbank.id = bank;
+            }
     }
 
     return prev;
@@ -457,13 +472,14 @@ void tic_core_tick(tic_mem* tic, tic_tick_data* data)
             core->state.synced = 0;
             tic->input.data = 0;
 
-            if(strcmp(tic_tool_metatag(code, "input", config->singleComment), "mouse") == 0)
+            if (strcmp(tic_tool_metatag(code, "input", config->singleComment), "mouse") == 0)
                 tic->input.mouse = 1;
-            else if(strcmp(tic_tool_metatag(code, "input", config->singleComment), "gamepad") == 0)
+            else if (strcmp(tic_tool_metatag(code, "input", config->singleComment), "gamepad") == 0)
                 tic->input.gamepad = 1;
-            else if(strcmp(tic_tool_metatag(code, "input", config->singleComment), "keyboard") == 0)
+            else if (strcmp(tic_tool_metatag(code, "input", config->singleComment), "keyboard") == 0)
                 tic->input.keyboard = 1;
-            else tic->input.data = -1;  // default is all enabled
+            else
+                tic->input.data = -1; // default is all enabled
 
             data->start = data->counter(core->data->data);
 
@@ -484,7 +500,8 @@ void tic_core_tick(tic_mem* tic, tic_tick_data* data)
             core->state.callback = config->callback;
             core->state.initialized = true;
         }
-        else return;
+        else
+            return;
     }
 
     core->state.tick(tic);
@@ -567,7 +584,7 @@ void tic_core_tick_end(tic_mem* memory)
 
     core->state.gamepads.previous.data = input->gamepads.data;
     // SECURITY: we do not use `memory.ram.input` here because it is
-    // untrustworthy since the cartridge could have modified it to 
+    // untrustworthy since the cartridge could have modified it to
     // inject artificial keyboard/gamepad events.
     core->state.keyboard.previous.data = core->state.keyboard.now.data;
     core->state.gamepads.previous.data = core->state.gamepads.now.data;
@@ -583,10 +600,9 @@ static inline void memset4(void* dst, u32 val, u32 dwords)
     __asm__ __volatile__(
         "cld \n\t"
         "rep ; stosl \n\t"
-        : "=&D" (u0), "=&a" (u1), "=&c" (u2)
-        : "0" (dst), "1" (val), "2" (dwords)
-        : "memory"
-    );
+        : "=&D"(u0), "=&a"(u1), "=&c"(u2)
+        : "0"(dst), "1"(val), "2"(dwords)
+        : "memory");
 #else
     u32 _n = (dwords + 3) / 4;
     u32* _p = (u32*)dst;
@@ -595,12 +611,17 @@ static inline void memset4(void* dst, u32 val, u32 dwords)
         return;
     switch (dwords % 4)
     {
-    case 0: do {
-        *_p++ = _val;
-    case 3:         *_p++ = _val;
-    case 2:         *_p++ = _val;
-    case 1:         *_p++ = _val;
-    } while (--_n);
+        case 0:
+            do
+            {
+                *_p++ = _val;
+                case 3:
+                    *_p++ = _val;
+                case 2:
+                    *_p++ = _val;
+                case 1:
+                    *_p++ = _val;
+            } while (--_n);
     }
 #endif
 }
@@ -616,16 +637,17 @@ static inline void updbdr(tic_mem* tic, s32 row, u32* ptr, tic_blit_callback clb
 {
     tic_core* core = (tic_core*)tic;
 
-    if(clb.border) clb.border(tic, row, clb.data);
+    if (clb.border) clb.border(tic, row, clb.data);
 
-    if(clb.scanline)
+    if (clb.scanline)
     {
-        if(row == 0) clb.scanline(tic, 0, clb.data);
-        else if(row > TIC80_MARGIN_TOP && row < (TIC80_HEIGHT + TIC80_MARGIN_TOP))
+        if (row == 0)
+            clb.scanline(tic, 0, clb.data);
+        else if (row > TIC80_MARGIN_TOP && row < (TIC80_HEIGHT + TIC80_MARGIN_TOP))
             clb.scanline(tic, row - TIC80_MARGIN_TOP, clb.data);
     }
 
-    if(clb.border || clb.scanline)
+    if (clb.border || clb.scanline)
         updpal(tic, pal0, pal1);
 
     memset4(ptr, pal0->data[vbank0(core)->vars.border], TIC80_FULLWIDTH);
@@ -637,8 +659,8 @@ static inline u32 blitpix(tic_mem* tic, s32 offset0, s32 offset1, const tic_blit
     u32 pix = tic_tool_peek4(vbank1(core)->screen.data, offset1);
 
     return pix != vbank1(core)->vars.clear
-        ? pal1->data[pix]
-        : pal0->data[tic_tool_peek4(vbank0(core)->screen.data, offset0)];
+               ? pal1->data[pix]
+               : pal0->data[tic_tool_peek4(vbank0(core)->screen.data, offset0)];
 }
 
 void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
@@ -653,41 +675,46 @@ void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
 
 #define UPDBDR() updbdr(tic, row, rowPtr, clb, &pal0, &pal1)
 
-    for(; row != TIC80_MARGIN_TOP; ++row, rowPtr += TIC80_FULLWIDTH)
+    for (; row != TIC80_MARGIN_TOP; ++row, rowPtr += TIC80_FULLWIDTH)
         UPDBDR();
 
-    for(; row != TIC80_FULLHEIGHT - TIC80_MARGIN_BOTTOM; ++row)
+    tic_vram* vb0 = vbank0(core); 
+    tic_vram* vb1 = vbank1(core); 
+    u16 offset0_x = vb0->vars.offset.x;
+    u16 offset0_y = vb0->vars.offset.y;
+    u16 offset1_x = vb1->vars.offset.x;
+    u16 offset1_y = vb1->vars.offset.y;
+    s32 OffsetY = TIC80_HEIGHT - TIC80_MARGIN_TOP;
+
+    for (; row != TIC80_FULLHEIGHT - TIC80_MARGIN_BOTTOM; ++row)
     {
         UPDBDR();
         rowPtr += TIC80_MARGIN_LEFT;
 
-        if(*(u16*)&vbank0(core)->vars.offset == 0 && *(u16*)&vbank1(core)->vars.offset == 0)
+        if (offset0_x == 0 && offset0_y == 0 && offset1_x == 0 && offset1_y == 0)
         {
             // render line without XY offsets
-            for(s32 x = (row - TIC80_MARGIN_TOP) * TIC80_WIDTH, end = x + TIC80_WIDTH; x != end; ++x)
+            for (s32 x = (row - TIC80_MARGIN_TOP) * TIC80_WIDTH, end = x + TIC80_WIDTH; x != end; ++x)
                 *rowPtr++ = blitpix(tic, x, x, &pal0, &pal1);
         }
         else
         {
             // render line with XY offsets
-            enum{OffsetY = TIC80_HEIGHT - TIC80_MARGIN_TOP};
-            s32 start0 = (row + vbank0(core)->vars.offset.y + OffsetY) % TIC80_HEIGHT * TIC80_WIDTH;
-            s32 start1 = (row + vbank1(core)->vars.offset.y + OffsetY) % TIC80_HEIGHT * TIC80_WIDTH;
-            s32 offsetX0 = vbank0(core)->vars.offset.x;
-            s32 offsetX1 = vbank1(core)->vars.offset.x;
+            s32 start0 = (row + offset0_y + OffsetY) % TIC80_HEIGHT * TIC80_WIDTH;
+            s32 start1 = (row + offset1_y + OffsetY) % TIC80_HEIGHT * TIC80_WIDTH;
 
-            for(s32 x = TIC80_WIDTH; x != 2 * TIC80_WIDTH; ++x)
-                *rowPtr++ = blitpix(tic, (x + offsetX0) % TIC80_WIDTH + start0, 
-                    (x + offsetX1) % TIC80_WIDTH + start1, &pal0, &pal1);
+            for (s32 x = TIC80_WIDTH; x != 2 * TIC80_WIDTH; ++x)
+                *rowPtr++ = blitpix(tic, (x + offset0_x) % TIC80_WIDTH + start0,
+                                    (x + offset1_x) % TIC80_WIDTH + start1, &pal0, &pal1);
         }
 
         rowPtr += TIC80_MARGIN_RIGHT;
     }
 
-    for(; row != TIC80_FULLHEIGHT; ++row, rowPtr += TIC80_FULLWIDTH)
+    for (; row != TIC80_FULLHEIGHT; ++row, rowPtr += TIC80_FULLWIDTH)
         UPDBDR();
 
-#undef  UPDBDR
+#undef UPDBDR
 }
 
 static inline void scanline(tic_mem* memory, s32 row, void* data)
@@ -742,12 +769,12 @@ tic_mem* tic_core_create(s32 samplerate, tic80_pixel_color_format format)
     blip_set_rates(core->blip.right, CLOCKRATE, samplerate);
 
     {
-#define API_FUNC_DEF(name, ...) core->api.name = tic_api_ ## name;
+#define API_FUNC_DEF(name, ...) core->api.name = tic_api_##name;
         TIC_API_LIST(API_FUNC_DEF)
-#undef  API_FUNC_DEF
+#undef API_FUNC_DEF
 
 #if defined BUILD_DEPRECATED
-        void tic_api_textri(tic_mem* tic, float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, bool use_map, u8* colors, s32 count);
+        void tic_api_textri(tic_mem * tic, float x1, float y1, float x2, float y2, float x3, float y3, float u1, float v1, float u2, float v2, float u3, float v3, bool use_map, u8* colors, s32 count);
         core->api.textri = tic_api_textri;
 #endif
     }

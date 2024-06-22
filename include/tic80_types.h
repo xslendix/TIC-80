@@ -22,15 +22,15 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #ifdef memcpy
-#undef memcpy
+#    undef memcpy
 #endif
 #ifdef memset
-#undef memset
+#    undef memset
 #endif
 
 typedef uint8_t u8;

@@ -6,7 +6,6 @@ option(BUILD_WITH_JS "JS Enabled" ${BUILD_WITH_ALL})
 message("BUILD_WITH_JS: ${BUILD_WITH_JS}")
 
 if(BUILD_WITH_JS)
-
     set(QUICKJS_DIR ${THIRDPARTY_DIR}/quickjs)
 
     file(STRINGS ${QUICKJS_DIR}/VERSION CONFIG_VERSION)
@@ -25,7 +24,7 @@ if(BUILD_WITH_JS)
         target_compile_definitions(quickjs PRIVATE DUMP_LEAKS)
     endif()
 
-    if(BAREMETALPI OR N3DS)
+    if(BAREMETALPI OR N3DS OR PSP)
         target_compile_definitions(quickjs PRIVATE POOR_CLIB) 
     endif()
 
@@ -38,6 +37,10 @@ if(BUILD_WITH_JS)
         ${CMAKE_SOURCE_DIR}/src/api/js.c
         ${CMAKE_SOURCE_DIR}/src/api/parse_note.c
     )
+
+		if (PSP)
+				target_compile_options(quickjs PRIVATE -w)
+		endif()
 
     add_library(js ${TIC_RUNTIME} ${JS_SRC})
 

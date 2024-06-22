@@ -4,6 +4,11 @@ include(cmake/version.cmake)
 
 project(TIC-80 VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_REVISION} LANGUAGES C CXX)
 
+if(CMAKE_TOOLCHAIN_FILE MATCHES ".*pspdev.cmake$")
+    message(STATUS "Compiling for the PSP")
+    set(PSP ON)
+endif()
+
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version")
 endif()
@@ -14,7 +19,7 @@ message("VERSION_HASH: ${VERSION_HASH}")
 
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version.h")
 
-if(ANDROID OR EMSCRIPTEN OR N3DS OR BAREMETALPI)
+if(ANDROID OR EMSCRIPTEN OR N3DS OR BAREMETALPI OR PSP)
     set(BUILD_STATIC_DEFAULT ON)
 else()
     set(BUILD_STATIC_DEFAULT OFF)
@@ -40,6 +45,11 @@ option(BUILD_NO_OPTIMIZATION "Build without optimizations for debugging" OFF)
 option(BUILD_ASAN_DEBUG "Build with AddressSanitizer" OFF)
 option(BUILD_WITH_ZLIB "Build with zlib linked" ON)
 option(TIC80_TARGET "Target binary suffix")
+
+if (PSP)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -fpermissive")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -fpermissive")
+endif()
 
 if(NOT TIC80_TARGET)
     set(TIC80_TARGET tic80)
@@ -79,11 +89,15 @@ if (N3DS)
     set(BUILD_SDL OFF)
 endif()
 
+if (PSP)
+    set(BUILD_SDL OFF)
+endif()
+
 if (BAREMETALPI)
     set(BUILD_SDL OFF)
 endif()
 
-if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN AND NOT ANDROID AND NOT N3DS)
+if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN AND NOT ANDROID AND NOT N3DS AND NOT PSP)
     set(LINUX TRUE)
 
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -94,7 +108,7 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE AND NOT PSP)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -129,6 +143,10 @@ if(RPI)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
 endif()
 
+if(PSP)
+    add_definitions(-DMINIZ_NO_TIME)
+endif()
+
 set(THIRDPARTY_DIR ${CMAKE_SOURCE_DIR}/vendor)
 set(DEMO_CARTS_IN ${CMAKE_SOURCE_DIR}/demos)
 
@@ -161,5 +179,6 @@ include(cmake/sdl.cmake)
 include(cmake/sokol.cmake)
 include(cmake/libretro.cmake)
 include(cmake/n3ds.cmake)
+include(cmake/psp.cmake)
 
 include(cmake/install.cmake)

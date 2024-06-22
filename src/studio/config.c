@@ -31,7 +31,7 @@
 #define DEFAULT_VSYNC 1
 #endif
 
-#if defined(__TIC_ANDROID__)
+#if defined(__TIC_ANDROID__) || defined(PSP)
 #define INTEGER_SCALE_DEFAULT false
 #else
 #define INTEGER_SCALE_DEFAULT true
@@ -117,7 +117,8 @@ static void setDefault(Config* config)
 
         SCOPE(free(data))
         {
-            update(config, data, tic_tool_unzip(data, sizeof(tic_cartridge), ConfigZip, sizeof ConfigZip));
+            s32 size = tic_tool_unzip(data, sizeof(tic_cartridge), ConfigZip, sizeof ConfigZip);
+            update(config, data, size);
         }
     }
 }

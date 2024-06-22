@@ -638,6 +638,7 @@ void* fs_read(const char* path, s32* size)
 
 #else
     const FsString* pathString = utf8ToString(path);
+
     FILE* file = tic_fopen(pathString, _S("rb"));
     freeString(pathString);
 
@@ -957,6 +958,13 @@ const char* fs_apppath()
 #elif defined(__TIC_MACOSX__)
     u32 size = sizeof apppath;
     _NSGetExecutablePath(apppath, &size);
+#elif defined(PSP)
+    if (getcwd(apppath, sizeof(apppath)) == NULL)
+    {
+        apppath[0] = '\0';
+        return apppath;
+    }
+    strcpy(apppath+strlen(apppath), "/EBOOT.PBP");
 #endif
 
     return apppath;
@@ -965,6 +973,13 @@ const char* fs_apppath()
 const char* fs_appfolder()
 {
     static char appfolder[TICNAME_MAX];
+#if defined(PSP)
+    if (getcwd(appfolder, sizeof(appfolder)) == NULL)
+    {
+        appfolder[0] = '\0';
+        return appfolder;
+    }
+#endif
     strcpy(appfolder, fs_apppath());
 
     char* pos = strrchr(appfolder, SLASH_SYMBOL);

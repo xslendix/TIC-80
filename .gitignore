@@ -181,6 +181,13 @@ CMakeSettings.json
 tic_mruby_build_config.rb.lock
 tic_mruby_wasm_build_config.rb.lock
 build/mruby_vendor-prefix/
+build/EBOOT.PBP
+build/PARAM.SFO
+cmake/vendor/zip/Doxyfile
+cmake/vendor/zip/cmake/cmake_uninstall.cmake
+cmake/vendor/zip/cmake_install.cmake
+cmake/vendor/zip/generated/zipConfig.cmake
+cmake/vendor/zip/generated/zipConfigVersion.cmake
 **/zig-cache
 **/zig-out
 .cache

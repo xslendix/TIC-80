@@ -60,6 +60,10 @@
 #define CART_EXT ".tic"
 #define PNG_EXT ".png"
 
+extern void pspDebugScreenPrintf(char const *fmt, ...);
+#define printf pspDebugScreenPrintf
+#define fprintf(f, a, ...) pspDebugScreenPrintf(a, __VA_ARGS__)
+
 #if defined(CRT_SHADER_SUPPORT)
 #   define CRT_CMD_PARAM(macro)                                 \
     macro(crt, bool, BOOLEAN, "", "enable CRT monitor effect")

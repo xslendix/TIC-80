@@ -5,7 +5,7 @@
 option(BUILD_WITH_RUBY "Ruby Enabled" ${BUILD_WITH_ALL})
 message("BUILD_WITH_RUBY: ${BUILD_WITH_RUBY}")
 
-if(BUILD_WITH_RUBY)
+if(BUILD_WITH_RUBY AND NOT PSP)
 
     find_program(RUBY ruby)
     find_program(RAKE rake)

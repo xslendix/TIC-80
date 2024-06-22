@@ -27,20 +27,20 @@
 #include "gif.h"
 #include "gif_lib.h"
 
-static gif_image* readGif(GifFileType *gif)
+static gif_image* readGif(GifFileType* gif)
 {
     gif_image* image = NULL;
 
-    s32 error = 0;
+    int error = 0;
 
-    if(gif)
+    if (gif)
     {
-        if(gif->SHeight > 0 && gif->SWidth > 0)
+        if (gif->SHeight > 0 && gif->SWidth > 0)
         {
             s32 size = gif->SWidth * gif->SHeight * sizeof(GifPixelType);
             GifPixelType* screen = (GifPixelType*)malloc(size);
 
-            if(screen)
+            if (screen)
             {
                 memset(screen, gif->SBackGroundColor, size);
 
@@ -48,7 +48,7 @@ static gif_image* readGif(GifFileType *gif)
 
                 do
                 {
-                    if(DGifGetRecordType(gif, &record) == GIF_ERROR)
+                    if (DGifGetRecordType(gif, &record) == GIF_ERROR)
                     {
                         error = gif->Error;
                         break;
@@ -56,9 +56,9 @@ static gif_image* readGif(GifFileType *gif)
 
                     switch (record)
                     {
-                    case IMAGE_DESC_RECORD_TYPE:
+                        case IMAGE_DESC_RECORD_TYPE:
                         {
-                            if(DGifGetImageDesc(gif) == GIF_ERROR)
+                            if (DGifGetImageDesc(gif) == GIF_ERROR)
                                 error = gif->Error;
 
                             s32 row = gif->Image.Top;
@@ -68,17 +68,17 @@ static gif_image* readGif(GifFileType *gif)
 
                             if (gif->Image.Left + gif->Image.Width > gif->SWidth ||
                                 gif->Image.Top + gif->Image.Height > gif->SHeight)
-                                    error = E_GIF_ERR_OPEN_FAILED;
+                                error = E_GIF_ERR_OPEN_FAILED;
 
                             if (gif->Image.Interlace)
                             {
-                                s32 InterlacedOffset[] = { 0, 4, 2, 1 };
-                                s32 InterlacedJumps[] = { 8, 8, 4, 2 };
+                                s32 InterlacedOffset[] = {0, 4, 2, 1};
+                                s32 InterlacedJumps[] = {8, 8, 4, 2};
 
                                 for (s32 i = 0; i < 4; i++)
                                     for (s32 j = row + InterlacedOffset[i]; j < row + height; j += InterlacedJumps[i])
                                     {
-                                        if(DGifGetLine(gif, screen + j * gif->SWidth + col, width) == GIF_ERROR)
+                                        if (DGifGetLine(gif, screen + j * gif->SWidth + col, width) == GIF_ERROR)
                                         {
                                             error = gif->Error;
                                             break;
@@ -89,7 +89,7 @@ static gif_image* readGif(GifFileType *gif)
                             {
                                 for (s32 i = 0; i < height; i++, row++)
                                 {
-                                    if(DGifGetLine(gif, screen + row * gif->SWidth + col, width) == GIF_ERROR)
+                                    if (DGifGetLine(gif, screen + row * gif->SWidth + col, width) == GIF_ERROR)
                                     {
                                         error = gif->Error;
                                         break;
@@ -99,9 +99,9 @@ static gif_image* readGif(GifFileType *gif)
                         }
                         break;
 
-                    case EXTENSION_RECORD_TYPE:
+                        case EXTENSION_RECORD_TYPE:
                         {
-                            s32 extCode = 0;
+                            int extCode = 0;
                             GifByteType* extension = NULL;
 
                             if (DGifGetExtension(gif, &extCode, &extension) == GIF_ERROR)
@@ -110,7 +110,7 @@ static gif_image* readGif(GifFileType *gif)
                             {
                                 while (extension != NULL)
                                 {
-                                    if(DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
+                                    if (DGifGetExtensionNext(gif, &extension) == GIF_ERROR)
                                     {
                                         error = gif->Error;
                                         break;
@@ -119,22 +119,22 @@ static gif_image* readGif(GifFileType *gif)
                             }
                         }
                         break;
-                    case TERMINATE_RECORD_TYPE:
-                        break;
-                    default: break;
+                        case TERMINATE_RECORD_TYPE:
+                            break;
+                        default:
+                            break;
                     }
 
-                    if(error != E_GIF_SUCCEEDED)
+                    if (error != E_GIF_SUCCEEDED)
                         break;
-                }
-                while(record != TERMINATE_RECORD_TYPE);
+                } while (record != TERMINATE_RECORD_TYPE);
 
-                if(error == E_GIF_SUCCEEDED)
+                if (error == E_GIF_SUCCEEDED)
                 {
 
                     image = (gif_image*)malloc(sizeof(gif_image));
 
-                    if(image)
+                    if (image)
                     {
                         memset(image, 0, sizeof(gif_image));
                         image->buffer = screen;
@@ -149,13 +149,14 @@ static gif_image* readGif(GifFileType *gif)
                         image->palette = malloc(size);
 
                         memcpy(image->palette, colorMap->Colors, size);
-                    }                   
+                    }
                 }
-                else free(screen);
+                else
+                    free(screen);
             }
         }
 
-        DGifCloseFile(gif, &error);
+        DGifCloseFile((GifFileType*)gif, &error);
     }
 
     return image;
@@ -180,17 +181,17 @@ static s32 readBuffer(GifFileType* gif, GifByteType* data, s32 size)
 gif_image* gif_read_data(const void* data, s32 size)
 {
     GifBuffer buffer = {data, 0};
-    GifFileType *gif = DGifOpen(&buffer, readBuffer, NULL);
+    GifFileType* gif = DGifOpen(&buffer, (InputFunc)readBuffer, NULL);
 
     return readGif(gif);
 }
 
 void gif_close(gif_image* image)
 {
-    if(image)
+    if (image)
     {
-        if(image->buffer) free(image->buffer);
-        if(image->palette) free(image->palette);
+        if (image->buffer) free(image->buffer);
+        if (image->palette) free(image->palette);
 
         free(image);
     }

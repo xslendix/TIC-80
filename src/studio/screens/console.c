@@ -1514,7 +1514,7 @@ static void onDirDone(void* ctx)
     PrintFileNameData* data = ctx;
     Console* console = data->console;
 
-    qsort(data->items, data->count, sizeof *data->items, itemcmp);
+    qsort(data->items, data->count, sizeof *data->items, (__compar_fn_t)itemcmp);
 
     for(const FileItem *item = data->items, *end = item + data->count; item < end; item++)
     {
@@ -4541,8 +4541,8 @@ void initConsole(Console* console, Studio* studio, tic_fs* fs, tic_net* net, Con
         }
     }
 
-    qsort(Commands, COUNT_OF(Commands), sizeof Commands[0], cmdcmp);
-    qsort(Api, COUNT_OF(Api), sizeof Api[0], apicmp);
+    qsort(Commands, COUNT_OF(Commands), sizeof Commands[0], (__compar_fn_t)cmdcmp);
+    qsort(Api, COUNT_OF(Api), sizeof Api[0], (__compar_fn_t)apicmp);
 
     memset(console->text, 0, CONSOLE_BUFFER_SIZE);
     memset(console->color, TIC_COLOR_BG, CONSOLE_BUFFER_SIZE);
