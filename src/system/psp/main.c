@@ -9,14 +9,14 @@
 #include <pspgu.h>
 #include <pspgum.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <math.h>
 
+#include "studio/fs.h"
 #include "studio/studio.h"
 #include "studio/system.h"
-#include "studio/fs.h"
 
 static unsigned int __attribute__((aligned(16))) list[262144];
 
@@ -112,9 +112,9 @@ void render_texture(float x, float y, float w, float h, u32 buffer[], int tw, in
     sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
     sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 
-	TexVertex *vertices = (TexVertex *)sceGuGetMemory(2 * sizeof(TexVertex));
-	vertices[0] = (TexVertex){ 0, 0, 0, x, y, 0.0f };
-	vertices[1] = (TexVertex){ 1, 1, 0, x + w, y + h, 0.0f };
+    TexVertex* vertices = (TexVertex*)sceGuGetMemory(2 * sizeof(TexVertex));
+    vertices[0] = (TexVertex){0, 0, 0, x, y, 0.0f};
+    vertices[1] = (TexVertex){1, 1, 0, x + w, y + h, 0.0f};
 
     sceGumDrawArray(GU_SPRITES,
                     GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 2, 0, vertices);
@@ -212,20 +212,25 @@ bool tic_sys_keyboard_text(char* text)
 Studio* g_studio;
 tic80_input g_input;
 
-static void copy_frame(void) {
-    u32 *in = studio_mem(g_studio)->product.screen;
+static void copy_frame(void)
+{
+    u32* in = studio_mem(g_studio)->product.screen;
 
     memcpy(g_fb, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
-	sceKernelDcacheWritebackInvalidateRange(g_fb, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
+    sceKernelDcacheWritebackInvalidateRange(g_fb, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
 }
 
-void process_thumbstick_input(float x, float y, float *normalizedX, float *normalizedY, float deadzone) {
+void process_thumbstick_input(float x, float y, float* normalizedX, float* normalizedY, float deadzone)
+{
     float distance = sqrt(x * x + y * y);
 
-    if (distance < deadzone) {
+    if (distance < deadzone)
+    {
         *normalizedX = 0;
         *normalizedY = 0;
-    } else {
+    }
+    else
+    {
         float normalizedDistance = (distance - deadzone) / (1 - deadzone);
         *normalizedX = (x / distance) * normalizedDistance;
         *normalizedY = (y / distance) * normalizedDistance;
@@ -239,11 +244,11 @@ int main(int argc, char** argv)
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) == NULL)
         return 1;
-    strcpy(cwd+strlen(cwd), "/EBOOT.PBP");
+    strcpy(cwd + strlen(cwd), "/EBOOT.PBP");
 
-    char *argv2[] = { cwd, "--cmd=surf", 0 };
+    char* argv2[] = {cwd, "--cmd=surf", 0};
     int argc_used = 2;
-    char **argv_used = argv2;
+    char** argv_used = argv2;
 
     mkdir("tic80", S_IRWXU | S_IRWXG | S_IRWXO);
 
@@ -261,7 +266,6 @@ int main(int argc, char** argv)
     for (int x = 0; x < TIC80_FULLWIDTH; x++)
         for (int y = 0; y < TIC80_FULLHEIGHT; y++)
             g_fb[x + TIC80_FULLWIDTH * y] = 0xff000000;
-
 
     void* fbp0 = get_static_vram_buffer(BUF_WIDTH, SCR_HEIGHT, GU_PSM_8888);
     void* fbp1 = get_static_vram_buffer(BUF_WIDTH, SCR_HEIGHT, GU_PSM_8888);
@@ -297,7 +301,7 @@ int main(int argc, char** argv)
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
     u32 fc = 0;
-    SceCtrlData        pad;
+    SceCtrlData pad;
     while (g_running && !studio_alive(g_studio))
     {
         u32 start_frame = fc;
@@ -347,8 +351,8 @@ int main(int argc, char** argv)
 
         sceGumMatrixMode(GU_MODEL);
         sceGumLoadIdentity();
-        render_texture(-TIC80_MARGIN_LEFT-TIC80_MARGIN_RIGHT, -TIC80_MARGIN_TOP - TIC80_MARGIN_BOTTOM, TIC80_FULLWIDTH*2, TIC80_FULLHEIGHT*2, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
-        //render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
+        //render_texture(-TIC80_MARGIN_LEFT-TIC80_MARGIN_RIGHT, -TIC80_MARGIN_TOP - TIC80_MARGIN_BOTTOM, TIC80_FULLWIDTH*2, TIC80_FULLHEIGHT*2, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
+        render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
 
         sceGuFinish();
         sceGuSync(0, 0);
@@ -369,24 +373,32 @@ int main(int argc, char** argv)
     return 0;
 }
 
-int ftruncate(int fd, off_t length) {
+int ftruncate(int fd, off_t length)
+{
     // Get the current file size
     off_t current_size = lseek(fd, 0, SEEK_END);
-    if (current_size == -1) {
+    if (current_size == -1)
+    {
         return -1;
     }
 
     // Truncate the file if needed
-    if (length < current_size) {
-        if (ftruncate(fd, length) == -1) {
+    if (length < current_size)
+    {
+        if (ftruncate(fd, length) == -1)
+        {
             return -1;
         }
-    } else if (length > current_size) {
+    }
+    else if (length > current_size)
+    {
         // Extend the file size
-        if (lseek(fd, length - 1, SEEK_SET) == -1) {
+        if (lseek(fd, length - 1, SEEK_SET) == -1)
+        {
             return -1;
         }
-        if (write(fd, "", 1) != 1) {
+        if (write(fd, "", 1) != 1)
+        {
             return -1;
         }
     }
