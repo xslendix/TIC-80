@@ -65,7 +65,7 @@ int setup_callbacks(void)
 
 static unsigned int static_offset = 0;
 
-static unsigned int get_memory_size(unsigned int width, unsigned int height, unsigned int psm)
+unsigned int get_memory_size(unsigned int width, unsigned int height, unsigned int psm)
 {
     switch (psm)
     {
@@ -119,8 +119,6 @@ void render_texture(float x, float y, float w, float h, u32 buffer[], int tw, in
     sceGumDrawArray(GU_SPRITES,
                     GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 2, 0, vertices);
 }
-
-u32* g_fb = NULL;
 
 void tic_sys_clipboard_set(const char* text)
 {
@@ -212,14 +210,6 @@ bool tic_sys_keyboard_text(char* text)
 Studio* g_studio;
 tic80_input g_input;
 
-static void copy_frame(void)
-{
-    u32* in = studio_mem(g_studio)->product.screen;
-
-    memcpy(g_fb, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
-    sceKernelDcacheWritebackInvalidateRange(g_fb, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
-}
-
 void process_thumbstick_input(float x, float y, float* normalizedX, float* normalizedY, float deadzone)
 {
     float distance = sqrt(x * x + y * y);
@@ -261,11 +251,6 @@ int main(int argc, char** argv)
 
     scePowerUnlock(0);
     scePowerSetClockFrequency(333, 333, 166);
-
-    g_fb = (u32*)get_static_vram_texture(TIC80_FULLWIDTH, TIC80_FULLHEIGHT, GU_PSM_8888);
-    for (int x = 0; x < TIC80_FULLWIDTH; x++)
-        for (int y = 0; y < TIC80_FULLHEIGHT; y++)
-            g_fb[x + TIC80_FULLWIDTH * y] = 0xff000000;
 
     void* fbp0 = get_static_vram_buffer(BUF_WIDTH, SCR_HEIGHT, GU_PSM_8888);
     void* fbp1 = get_static_vram_buffer(BUF_WIDTH, SCR_HEIGHT, GU_PSM_8888);
@@ -335,8 +320,6 @@ int main(int argc, char** argv)
         if (getStudioMode(g_studio) == TIC_CONSOLE_MODE)
             setStudioMode(g_studio, TIC_SURF_MODE);
 
-        copy_frame();
-
         sceGuStart(GU_DIRECT, list);
 
         sceGuClearColor(0xff000000);
@@ -352,7 +335,7 @@ int main(int argc, char** argv)
         sceGumMatrixMode(GU_MODEL);
         sceGumLoadIdentity();
         //render_texture(-TIC80_MARGIN_LEFT-TIC80_MARGIN_RIGHT, -TIC80_MARGIN_TOP - TIC80_MARGIN_BOTTOM, TIC80_FULLWIDTH*2, TIC80_FULLHEIGHT*2, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
-        render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
+        render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
 
         sceGuFinish();
         sceGuSync(0, 0);

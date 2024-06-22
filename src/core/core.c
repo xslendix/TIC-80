@@ -678,8 +678,8 @@ void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
     for (; row != TIC80_MARGIN_TOP; ++row, rowPtr += TIC80_FULLWIDTH)
         UPDBDR();
 
-    tic_vram* vb0 = vbank0(core); 
-    tic_vram* vb1 = vbank1(core); 
+    tic_vram* vb0 = vbank0(core);
+    tic_vram* vb1 = vbank1(core);
     u16 offset0_x = vb0->vars.offset.x;
     u16 offset0_y = vb0->vars.offset.y;
     u16 offset1_x = vb1->vars.offset.x;
@@ -738,6 +738,13 @@ void tic_core_blit(tic_mem* tic)
     tic_core_blit_ex(tic, (tic_blit_callback){scanline, border, NULL});
 }
 
+#ifdef PSP
+#    include <pspgu.h>
+#    include <pspgum.h>
+
+void* get_static_vram_texture(unsigned int width, unsigned int height, unsigned int psm);
+#endif
+
 tic_mem* tic_core_create(s32 samplerate, tic80_pixel_color_format format)
 {
     tic_core* core = (tic_core*)malloc(sizeof(tic_core));
@@ -756,6 +763,8 @@ tic_mem* tic_core_create(s32 samplerate, tic80_pixel_color_format format)
     // not guaranteed by malloc.
     // Additionally, allocate TIC80_FULLHEIGHT + 1 lines to minimize glitches in linear scaling mode.
     product->screen = linearAlloc(TIC80_FULLWIDTH * (TIC80_FULLHEIGHT + 1) * sizeof(u32));
+#elifdef PSP
+    product->screen = get_static_vram_texture(TIC80_FULLWIDTH, TIC80_FULLHEIGHT, GU_PSM_8888);
 #else
     product->screen = malloc(TIC80_FULLWIDTH * TIC80_FULLHEIGHT * sizeof product->screen[0]);
 #endif
