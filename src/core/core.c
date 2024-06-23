@@ -675,8 +675,8 @@ void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
 
 #define UPDBDR() updbdr(tic, row, rowPtr, clb, &pal0, &pal1)
 
-    for (; row != TIC80_MARGIN_TOP; ++row, rowPtr += TIC80_FULLWIDTH)
-        UPDBDR();
+    //for (; row != TIC80_MARGIN_TOP; ++row, rowPtr += TIC80_FULLWIDTH)
+    //    UPDBDR();
 
     tic_vram* vb0 = vbank0(core);
     tic_vram* vb1 = vbank1(core);
@@ -688,7 +688,7 @@ void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
 
     for (; row != TIC80_FULLHEIGHT - TIC80_MARGIN_BOTTOM; ++row)
     {
-        UPDBDR();
+        //UPDBDR();
         rowPtr += TIC80_MARGIN_LEFT;
 
         if (offset0_x == 0 && offset0_y == 0 && offset1_x == 0 && offset1_y == 0)
@@ -711,8 +711,8 @@ void tic_core_blit_ex(tic_mem* tic, tic_blit_callback clb)
         rowPtr += TIC80_MARGIN_RIGHT;
     }
 
-    for (; row != TIC80_FULLHEIGHT; ++row, rowPtr += TIC80_FULLWIDTH)
-        UPDBDR();
+    //for (; row != TIC80_FULLHEIGHT; ++row, rowPtr += TIC80_FULLWIDTH)
+    //    UPDBDR();
 
 #undef UPDBDR
 }

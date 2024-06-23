@@ -140,16 +140,39 @@ void tic_sys_clipboard_free(const char* text)
     (void)text;
 }
 
+static struct timeval start;
+static bool ticks_started = false;
+
+void ticks_init(void)
+{
+    if (ticks_started)
+        return;
+    ticks_started = true;
+
+    gettimeofday(&start, NULL);
+}
+
+u32 get_ticks(void)
+{
+    if (!ticks_started)
+        ticks_init();
+
+    struct timeval now;
+    u32 ticks;
+
+    gettimeofday(&now, NULL);
+    ticks = (now.tv_sec - start.tv_sec) * 1000 + (now.tv_usec - start.tv_usec) / 1000;
+    return (ticks);
+}
+
 u64 tic_sys_counter_get()
 {
-    u64 tick;
-    sceRtcGetCurrentTick(&tick);
-    return tick;
+    return get_ticks;
 }
 
 u64 tic_sys_freq_get()
 {
-    return (u64)sceRtcGetTickResolution();
+    return 1000;
 }
 
 void tic_sys_fullscreen_set(bool value)
@@ -268,9 +291,9 @@ int main(int argc, char** argv)
     sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-    sceGuEnable(GU_ALPHA_TEST);
+    sceGuDisable(GU_ALPHA_TEST);
     sceGuFrontFace(GU_CW);
-    sceGuShadeModel(GU_SMOOTH);
+    sceGuShadeModel(GU_FLAT);
     sceGuEnable(GU_CULL_FACE);
     sceGuEnable(GU_TEXTURE_2D);
     sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
@@ -311,11 +334,16 @@ int main(int argc, char** argv)
 
         g_input.mouse.relative = 1;
         if (x != 0)
-            g_input.mouse.rx = x;
+            g_input.mouse.rx = x * 2;
         if (y != 0)
-            g_input.mouse.ry = y;
+            g_input.mouse.ry = y * 2;
+
+        g_input.mouse.left = (pad.Buttons & PSP_CTRL_LTRIGGER) != 0;
+        g_input.mouse.right = (pad.Buttons & PSP_CTRL_RTRIGGER) != 0;
 
         studio_tick(g_studio, g_input);
+
+        sceKernelDcacheWritebackInvalidateRange(studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH * TIC80_FULLHEIGHT * 4);
 
         if (getStudioMode(g_studio) == TIC_CONSOLE_MODE)
             setStudioMode(g_studio, TIC_SURF_MODE);
@@ -334,8 +362,8 @@ int main(int argc, char** argv)
 
         sceGumMatrixMode(GU_MODEL);
         sceGumLoadIdentity();
-        //render_texture(-TIC80_MARGIN_LEFT-TIC80_MARGIN_RIGHT, -TIC80_MARGIN_TOP - TIC80_MARGIN_BOTTOM, TIC80_FULLWIDTH*2, TIC80_FULLHEIGHT*2, g_fb, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
-        render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
+        render_texture(0, 0, TIC80_FULLWIDTH * 2, TIC80_FULLHEIGHT * 2, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
+        //render_texture(0, 0, TIC80_FULLWIDTH, TIC80_FULLHEIGHT, studio_mem(g_studio)->product.screen, TIC80_FULLWIDTH, TIC80_FULLHEIGHT);
 
         sceGuFinish();
         sceGuSync(0, 0);
@@ -349,8 +377,10 @@ int main(int argc, char** argv)
         fc++;
     }
 
-    studio_delete(g_studio);
+    gprof_cleanup();
+
     sceGuTerm();
+    studio_delete(g_studio);
 
     sceKernelExitGame();
     return 0;
